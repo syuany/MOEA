@@ -28,12 +28,11 @@ best_x=X(best,:);
 
 while FES<FES_MAX
     for i=1:NP
-        dx=randperm(NP);
-        index=find(i==dx(1,:));
-        dx(index)=[];
-        r1=dx(1);
-        r2=dx(2);
-        r3=dx(3);
+        pool=setdiff(1:NP, i);
+        idx=randperm(NP-1, 3);
+        r1=pool(idx(1));
+        r2=pool(idx(2));
+        r3=pool(idx(3));
 
         % DE/rand/1
         v=X(r1,:)+F.*(X(r2,:)-X(r3,:));

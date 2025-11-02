@@ -10,7 +10,7 @@ VarMin = 0;
 VarMax = 1;
 nObj = numel(TestFunction(unifrnd(VarMin, VarMax, VarSize)));
 
-MaxIt = 100;
+MaxIt = 300;
 nPop = 50;
 nArchive = 50;
 
@@ -66,14 +66,15 @@ for it = 1:MaxIt
     % recombination and mutation
     pop = DE(empty_individual, Pool, de_params);
 
+    % display
     figure(1);
     PlotFits(EP);
     pause(0.01);
 
     disp(['Iteration ', num2str(it), ': Number of EP = ', num2str(numel(EP))]);
 end
-%% Reults
 
+% Reults
 disp(' ');
 
 EPO = [EP.Objective];
@@ -180,6 +181,7 @@ function pop = EnvironmentSelection(pop, nArchive, nPop)
 n = numel(pop);
 indices = 1:n;
 
+% bubble sort   //TODO
 for i = 1:n - 1
     for j = 1:n - i
         if comp(pop(indices(j)), pop(indices(j+1)))
@@ -199,8 +201,8 @@ end
 
 function pop = SortByFitness(pop)
 Fits = [pop.Fitness];
-[~, so] = sort(Fits);
-pop = pop(so);
+[~, idx] = sort(Fits);
+pop = pop(idx);
 end
 
 function pool = TournamentSelection(pop)
