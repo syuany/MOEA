@@ -10,7 +10,7 @@ VarMin = zeros(VarSize);
 VarMax = ones(VarSize);
 nObj = numel(TestFunction(unifrnd(VarMin, VarMax, VarSize)));
 
-MaxIt = 300;
+MaxIt = 200;
 nDom = 100;
 nActive = 20;
 nClone = 100;
@@ -22,6 +22,7 @@ crossover_params.ub = VarMax;
 crossover_params.TestFunction = TestFunction;
 
 mutate_params.pm = 1 / nVar;
+mutate_params.sm = nVar;
 mutate_params.eta = 20;
 mutate_params.lb = VarMin;
 mutate_params.ub = VarMax;
@@ -207,22 +208,29 @@ for i = 1:nClone
         R(i).Objective = TestFunction(R(i).Position);
     end
 end
-
 end
 
 function pop = StaticHypermutation(pop, mutate_params)
-% polynomial mutation
+
+% First Constructive Mutation (FCM)
 nPop = numel(pop);
 pm = mutate_params.pm;
+sm = mutate_params.sm;
 eta = mutate_params.eta;
 lb = mutate_params.lb;
 ub = mutate_params.ub;
 TestFunction = mutate_params.TestFunction;
-nVar = length(pop(1).Position);
 
 for i = 1:nPop
-    m = pop(i).Position;
-    for j = 1:nVar
+    mu = pop(i).Position;
+    ori = pop(i).Objective;
+    rnd = randperm(sm);
+    mutated = false;
+
+    for k = 1:sm
+        j = rnd(k);
+
+        % polynomial mutation
         if rand < pm
             if rand < 0.5
                 delta = (2 * rand)^(1 / (eta + 1)) - 1;
@@ -230,12 +238,25 @@ for i = 1:nPop
                 delta = 1 - (2 * (1 - rand))^(1 / (eta + 1));
             end
 
-            m(j) = m(j) + delta * (ub(j) - lb(j));
-            m(j) = max(min(m(j), ub(j)), lb(j));
+            mu(j) = mu(j) + delta * (ub(j) - lb(j));
+            mu(j) = max(min(mu(j), ub(j)), lb(j));
+            mut = TestFunction(mu);
+
+            if Dominates(mut, ori)
+                pop(i).Position = mu;
+                pop(i).Objective = TestFunction(mu);
+                mutated = true;
+                break;
+            end
+        end
+
+        if mutated
+            break;
         end
     end
-    pop(i).Position = m;
-    pop(i).Objective = TestFunction(m);
+
+    pop(i).Position = mu;
+    pop(i).Objective = TestFunction(mu);
 end
 end
 
