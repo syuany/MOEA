@@ -170,7 +170,8 @@ end
 end
 
 function R = Recombination(C, A, crossover_params)
-% SBX crossover
+    
+% SBX (simulated binary crossover)
 nClone = numel(C);
 nActive = numel(A);
 nVar = length(C(1).Position);
