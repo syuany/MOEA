@@ -6,10 +6,8 @@ close all;
 
 CostFunction = @(x) ZDT1(x);      % Cost Function
 
-nVar = 30;             % Number of Decision Variables
-
-VarSize = [1 nVar];   % Size of Decision Variables Matrix
-
+nVar = 30;           % Number of Decision Variables
+VarSize = [1 nVar];  % Size of Decision Variables Matrix
 VarMin = 0;          % Lower Bound of Variables
 VarMax = 1;          % Upper Bound of Variables
 
@@ -17,28 +15,29 @@ VarMax = 1;          % Upper Bound of Variables
 nObj = numel(CostFunction(unifrnd(VarMin, VarMax, VarSize)));
 
 
-%% NSGA-II Parameters
+%% Parameters
 
-MaxIt = 300;      % Maximum Number of Iterations
-
+MaxFES=10000;
+% MaxIt = 100;      % Maximum Number of Iterations
 nPop = 50;        % Population Size
 
-pCrossover = 0.7;                         % Crossover Percentage
-nCrossover = 2*round(pCrossover*nPop/2);  % Number of Parnets (Offsprings)
+crossover_params.TournamentSize = 2;
+crossover_params.CrossoverRate = 0.8;
+crossover_params.Eta = 20;  
+crossover_params.CostFunction = CostFunction;  
 
-pMutation = 0.4;                          % Mutation Percentage
-nMutation = round(pMutation*nPop);        % Number of Mutants
-
-mu = 0.02;                    % Mutation Rate
-
-sigma = 0.2*(VarMax-VarMin);  % Mutation Step Size
-
+mutate_params.MutationRate = 1/nVar;  
+mutate_params.Eta = 20;  
+mutate_params.CostFunction = CostFunction;  
+mutate_params.lb=VarMin;
+mutate_params.ub=VarMax;
+    
 % g-Dominance Parameters
 
-g=[0.4;0.2];
-% g=[0.6;0.5];
+% g=[0.4;0.2];
+g=[0.6;0.5];
 
-M=1e6;
+M=1e10;
 
 %% Initialization
 
@@ -52,59 +51,40 @@ empty_individual.CrowdingDistance = [];
 pop = repmat(empty_individual, nPop, 1);
 
 for i = 1:nPop
-    
     pop(i).Position = unifrnd(VarMin, VarMax, VarSize);
-    
     pop(i).Cost = CostFunction(pop(i).Position);
-    
 end
 
 % g-Dominance
 pop=gDominance(pop, g, M);
 
-% Non-Dominated Sorting
 [pop, F] = NonDominatedSorting(pop);
-
-% Calculate Crowding Distance
 pop = CalcCrowdingDistance(pop, F);
-
-% Sort Population
 [pop, F] = SortPopulation(pop);
+
+FES=0;
+it=1;
 
 
 %% NSGA-II Main Loop
 
-for it = 1:MaxIt
-    
+while FES<MaxFES    
+
     % Crossover
-    popc = repmat(empty_individual, nCrossover/2, 2);
-    for k = 1:nCrossover/2
-        
-        i1 = randi([1 nPop]);
-        p1 = pop(i1);
-        
-        i2 = randi([1 nPop]);
-        p2 = pop(i2);
-        
-        [popc(k, 1).Position, popc(k, 2).Position] = Crossover(p1.Position, p2.Position);
-        
-        popc(k, 1).Cost = CostFunction(popc(k, 1).Position);
-        popc(k, 2).Cost = CostFunction(popc(k, 2).Position);
-        
-    end
-    popc = popc(:);
+    popc = TournamentSelection(pop, crossover_params);
     
     % Mutation
-    popm = repmat(empty_individual, nMutation, 1);
-    for k = 1:nMutation
-        
-        i = randi([1 nPop]);
-        p = pop(i);
-        
-        popm(k).Position = Mutate(p.Position, mu, sigma);
-        
-        popm(k).Cost = CostFunction(popm(k).Position);
-        
+    popm =Mutation(pop, mutate_params);
+
+     % Evaluate offspring
+    for i = 1:numel(popc)
+        popc(i).Cost = CostFunction(popc(i).Position);
+        FES = FES + 1;
+    end
+    
+    for i = 1:numel(popm)
+        popm(i).Cost = CostFunction(popm(i).Position);
+        FES = FES + 1;
     end
     
     % Merge
@@ -115,35 +95,24 @@ for it = 1:MaxIt
     % g-Dominance
     pop=gDominance(pop, g, M);
      
-    % Non-Dominated Sorting
     [pop, F] = NonDominatedSorting(pop);
-
-    % Calculate Crowding Distance
     pop = CalcCrowdingDistance(pop, F);
-
-    % Sort Population
     pop = SortPopulation(pop);
     
     % Truncate
     pop = pop(1:nPop);
     
-    % Non-Dominated Sorting
     [pop, F] = NonDominatedSorting(pop);
-
-    % Calculate Crowding Distance
     pop = CalcCrowdingDistance(pop, F);
-
-    % Sort Population
     [pop, F] = SortPopulation(pop);
     
-    % Store F1
     F1 = pop(F{1});
     
     % Show Iteration Information
     disp(['Iteration ' num2str(it) ': Number of F1 Members = ' num2str(numel(F1))]);
+    it=it+1;
     
     % Plot F1 Costs
-    figure(1);
     PlotCosts(F1, g);
     pause(0.01);
     
@@ -309,75 +278,4 @@ function [pop, F] = SortPopulation(pop)
         F{r} = find(Ranks == r);
     end
 
-end
-
-function [y1, y2] = Crossover(x1, x2)
-    VarMin = 0;  
-    VarMax = 1;  
-    
-    alpha = rand(size(x1));
-    
-    y1 = alpha.*x1 + (1-alpha).*x2;
-    y2 = alpha.*x2 + (1-alpha).*x1;
-    
-    % 边界处理
-    y1 = max(min(y1, VarMax), VarMin);
-    y2 = max(min(y2, VarMax), VarMin);
-end
-
-function y = Mutate(x, mu, sigma)
-    nVar = numel(x);
-    VarMin = 0;  
-    VarMax = 1;  
-    
-    nMu = ceil(mu*nVar);
-
-    j = randsample(nVar, nMu);
-    if numel(sigma)>1
-        sigma = sigma(j);
-    end
-    
-    y = x;
-    
-    y(j) = x(j) + sigma.*randn(size(j));
-    
-    % 边界处理
-    y(j) = max(min(y(j), VarMax), VarMin);
-end
-
-
-function PlotCosts(pop, g)
-    figure(1);  
-    set(gcf, 'Position', [100 100 800 600]);
-    
-    f1_exact = linspace(0, 1, 200);
-    f2_exact = 1 - sqrt(f1_exact);
-    plot(f1_exact, f2_exact, 'k-', 'LineWidth', 2, 'DisplayName', 'Exact');
-    
-    hold on;
-    
-    Costs = [pop.Cost];
-    
-    validIdx = all(Costs < 1000, 1);
-    if any(validIdx)
-        plot(Costs(1, validIdx), Costs(2, validIdx), 'rx', ...
-                'MarkerSize', 6, 'LineWidth', 1.5, 'DisplayName', 'NSGA-II');
-    end
-    
-    if length(g) >= 2
-        plot(g(1), g(2), 'bo', 'MarkerSize', 8, 'MarkerFaceColor', 'b', 'DisplayName', 'g');
-    end
-    
-    xlim([0 1.2]);
-    ylim([0 1.5]);
-    
-    xlabel('1^{st} Objective', 'FontSize', 12);
-    ylabel('2^{nd} Objective', 'FontSize', 12);
-    title('Pareto Front Comparison', 'FontSize', 14);
-    
-    legend('Location', 'northwest', 'FontSize', 10);
-    
-    grid on;
-    box on;
-    hold off;
 end
