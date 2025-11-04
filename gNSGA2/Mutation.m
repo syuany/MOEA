@@ -1,12 +1,9 @@
 function popm = Mutation(pop, mutate_params)
-    % 多项式变异操作
-    
     nPop = numel(pop);
-    popm = repmat(pop(1), nPop, 1);  % 初始化变异后代
+    popm = repmat(pop(1), nPop, 1);  
     CostFunction=mutate_params.CostFunction;
         
     for i = 1:nPop
-        % 复制个体
         popm(i) = pop(i);
         
         % 对每个维度执行多项式变异
@@ -15,8 +12,6 @@ function popm = Mutation(pop, mutate_params)
                 popm(i).Position(j) = PolynomialMutation(pop(i).Position(j), mutate_params.lb, mutate_params.ub, mutate_params.Eta);  
             end
         end
-        
-        % popm(i).Cost = CostFunction(popm(i).Position);
     end
 end
 
@@ -40,6 +35,5 @@ function mutated_value = PolynomialMutation(x, xl, xu, eta)
     
     mutated_value = x + deltaq * (xu - xl);
     
-    % 确保变异后的值在边界内
     mutated_value = max(xl, min(xu, mutated_value));
 end
