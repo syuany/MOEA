@@ -86,9 +86,9 @@ while FES < MaxFES
     end
 
     % Merge
-    pop = [pop; ...
-        popc; ...
-        popm]; %#ok
+    pop = [pop
+           popc
+           popm]; %#ok
 
     % g-Dominance
     pop = gDominance(pop, g, M);
