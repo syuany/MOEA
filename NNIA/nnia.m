@@ -10,7 +10,7 @@ VarMin = zeros(VarSize);
 VarMax = ones(VarSize);
 nObj = numel(TestFunction(unifrnd(VarMin, VarMax, VarSize)));
 
-MaxIt = 200;
+MaxIt = 300;
 nDom = 100;
 nActive = 20;
 nClone = 100;
@@ -30,14 +30,14 @@ mutate_params.TestFunction = TestFunction;
 
 % Initalization
 empty_individual.Position = [];
-empty_individual.Objective = [];
+empty_individual.Value = [];
 empty_individual.IsDominated = [];
 empty_individual.CrowdingDistance = [];
 
 B = repmat(empty_individual, nDom, 1);
 for i = 1:nDom
     B(i).Position = unifrnd(VarMin, VarMax, VarSize);
-    B(i).Objective = TestFunction(B(i).Position);
+    B(i).Value = TestFunction(B(i).Position);
     B(i).IsDominated = false;
 end
 
@@ -56,8 +56,8 @@ for it = 1:MaxIt
         A = D;
     end
 
-    % Proporthonal Cloning
-    C = ProporthonalCloning(A, nClone);
+    % Proportional Cloning
+    C = ProportionalCloning(A, nClone);
 
     % Recombination and Hypermutation
     R = Recombination(C, A, crossover_params);
@@ -77,8 +77,7 @@ for it = 1:MaxIt
     end
 
     % display
-    figure(1);
-    PlotObjs(D);
+    PlotVals(D);
     pause(0.01);
     disp(['Iteration ', num2str(it), ': Number of D = ', num2str(numel(D))]);
 end
@@ -86,52 +85,23 @@ end
 % Reults
 disp(' ');
 
-DO = [D.Objective];
+DV = [D.Value];
 for j = 1:nObj
 
-    disp(['Objective #', num2str(j), ':']);
-    disp(['      Min = ', num2str(min(DO(j, :)))]);
-    disp(['      Max = ', num2str(max(DO(j, :)))]);
-    disp(['    Range = ', num2str(max(DO(j, :))-min(DO(j, :)))]);
-    disp(['    St.D. = ', num2str(std(DO(j, :)))]);
-    disp(['     Mean = ', num2str(mean(DO(j, :)))]);
+    disp(['Value #', num2str(j), ':']);
+    disp(['      Min = ', num2str(min(DV(j, :)))]);
+    disp(['      Max = ', num2str(max(DV(j, :)))]);
+    disp(['    Range = ', num2str(max(DV(j, :))-min(DV(j, :)))]);
+    disp(['    St.D. = ', num2str(std(DV(j, :)))]);
+    disp(['     Mean = ', num2str(mean(DV(j, :)))]);
     disp(' ');
 
 end
 
 
-function b = Dominates(x, y)
-if isstruct(x)
-    x = x.Objective;
-end
-if isstruct(y)
-    y = y.Objective;
-end
-b = all(x <= y) && any(x < y);
-end
-
-function pop = GetDominants(pop)
-nPop = numel(pop);
-for i = 1:nPop
-    for j = i + 1:nPop
-        p = pop(i);
-        q = pop(j);
-        if Dominates(p, q)
-            q.IsDominated = true;
-        end
-        if Dominates(q, p)
-            p.IsDominated = true;
-        end
-        pop(i) = p;
-        pop(j) = q;
-    end
-end
-pop = pop(~[pop.IsDominated]);
-end
-
 function pop = CalcCrowdingDistance(pop)
 nPop = numel(pop);
-Objs = [pop.Objective];
+Objs = [pop.Value];
 nObj = size(Objs, 1);
 d = zeros(nPop, nObj);
 for j = 1:nObj
@@ -158,7 +128,7 @@ a = isinf(CD);
 pop = pop(so);
 end
 
-function C = ProporthonalCloning(pop, nClone)
+function C = ProportionalCloning(pop, nClone)
 nPop = numel(pop);
 sd = sum([pop.CrowdingDistance]);
 C = [];
@@ -206,7 +176,7 @@ for i = 1:nClone
         else
             R(i).Position = off2;
         end
-        R(i).Objective = TestFunction(R(i).Position);
+        R(i).Value = TestFunction(R(i).Position);
     end
 end
 end
@@ -224,7 +194,7 @@ TestFunction = mutate_params.TestFunction;
 
 for i = 1:nPop
     mu = pop(i).Position;
-    ori = pop(i).Objective;
+    ori = pop(i).Value;
     rnd = randperm(sm);
     mutated = false;
 
@@ -245,7 +215,7 @@ for i = 1:nPop
 
             if Dominates(mut, ori)
                 pop(i).Position = mu;
-                pop(i).Objective = TestFunction(mu);
+                pop(i).Value = TestFunction(mu);
                 mutated = true;
                 break;
             end
@@ -257,14 +227,6 @@ for i = 1:nPop
     end
 
     pop(i).Position = mu;
-    pop(i).Objective = TestFunction(mu);
+    pop(i).Value = TestFunction(mu);
 end
-end
-
-function PlotObjs(D)
-DO = [D.Objective];
-plot(DO(1, :), DO(2, :), 'x');
-xlabel('1^{st} Objective');
-ylabel('2^{st} Objective');
-grid on;
 end
