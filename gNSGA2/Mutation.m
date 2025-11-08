@@ -1,7 +1,6 @@
 function popm = Mutation(pop, mutate_params)
     nPop = numel(pop);
     popm = repmat(pop(1), nPop, 1);  
-    CostFunction=mutate_params.CostFunction;
         
     for i = 1:nPop
         popm(i) = pop(i);

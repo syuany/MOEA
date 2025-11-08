@@ -1,7 +1,6 @@
 clc;
 clear;
 close all;
-
 %% Problem Definition
 
 CostFunction = @(x) ZDT1(x); % Cost Function
@@ -13,7 +12,6 @@ VarMax = 1; % Upper Bound of Variables
 
 % Number of Objective Functions
 nObj = numel(CostFunction(unifrnd(VarMin, VarMax, VarSize)));
-
 %% Parameters
 
 MaxFES = 10000;
@@ -23,11 +21,11 @@ nPop = 50; % Population Size
 crossover_params.TournamentSize = 2;
 crossover_params.CrossoverRate = 0.8;
 crossover_params.Eta = 20;
-crossover_params.CostFunction = CostFunction;
+crossover_params.lb = VarMin;
+crossover_params.ub = VarMax;
 
 mutate_params.MutationRate = 1 / nVar;
 mutate_params.Eta = 20;
-mutate_params.CostFunction = CostFunction;
 mutate_params.lb = VarMin;
 mutate_params.ub = VarMax;
 
@@ -35,9 +33,9 @@ mutate_params.ub = VarMax;
 
 % g=[0.4;0.2];
 g = [0.6; 0.5];
+% g = [0.6; 0.22];
 
 M = 1e10;
-
 %% Initialization
 
 empty_individual.Position = [];
@@ -55,7 +53,7 @@ for i = 1:nPop
 end
 
 % g-Dominance
-pop = gDominance(pop, g, M);
+pop = Evaluate(pop, g, M);
 
 [pop, F] = NonDominatedSorting(pop);
 pop = CalcCrowdingDistance(pop, F);
@@ -63,13 +61,12 @@ pop = CalcCrowdingDistance(pop, F);
 
 FES = 0;
 it = 1;
-
 %% NSGA-II Main Loop
 
 while FES < MaxFES
 
     % Crossover
-    popc = TournamentSelection(pop, crossover_params);
+    popc = Crossover(pop, crossover_params);
 
     % Mutation
     popm = Mutation(pop, mutate_params);
@@ -86,12 +83,12 @@ while FES < MaxFES
     end
 
     % Merge
-    pop = [pop
-           popc
-           popm]; %#ok
+    pop = [pop; ...
+        popc; ...
+        popm]; %#ok
 
     % g-Dominance
-    pop = gDominance(pop, g, M);
+    pop = Evaluate(pop, g, M);
 
     [pop, F] = NonDominatedSorting(pop);
     pop = CalcCrowdingDistance(pop, F);
@@ -115,10 +112,9 @@ while FES < MaxFES
     pause(0.01);
 
 end
-
 %% Function Defination
 
-function pop = gDominance(pop, g, M)
+function pop = Evaluate(pop, g, M)
 nPop = numel(pop);
 for i = 1:nPop
     val = pop(i).Cost;

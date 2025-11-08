@@ -1,5 +1,4 @@
 function popc = TournamentSelection(pop, crossover_params)
-    CostFunction=crossover_params.CostFunction;
     nPop = numel(pop);
     popc = repmat(pop(1), nPop, 1);  
 
