@@ -1,9 +1,9 @@
 function b = Dominates(x, y)
     if isstruct(x)
-        x = x.Value;
+        x = x.Cost;
     end
     if isstruct(y)
-        y = y.Value;
+        y = y.Cost;
     end
     b = all(x <= y) && any(x < y);
 end

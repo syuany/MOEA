@@ -3,14 +3,14 @@ clear;
 close all;
 
 %% Settings
-TestFunction = @(x) ZDT6(x);
+CostFunction = @(x) ZDT6(x);
 nVar = 10;
 VarSize = [1, nVar];
 VarMin = 0;
 VarMax = 1;
-nObj = numel(TestFunction(unifrnd(VarMin, VarMax, VarSize)));
+nObj = numel(CostFunction(unifrnd(VarMin, VarMax, VarSize)));
 
-MaxFES = 20000;
+MaxFES = 15000;
 nPop = 50;
 
 K = 0.05;
@@ -27,7 +27,7 @@ mutate_params.ub = VarMax;
 
 %% Initialization
 empty_individual.Position = [];
-empty_individual.Value = [];
+empty_individual.Cost = [];
 empty_individual.Fitness = [];
 empty_individual.Distance = [];
 empty_individual.IsDominated = [];
@@ -35,7 +35,7 @@ empty_individual.IsDominated = [];
 pop = repmat(empty_individual, nPop, 1);
 for i = 1:nPop
     pop(i).Position = unifrnd(VarMin, VarMax, VarSize);
-    pop(i).Value = TestFunction(pop(i).Position);
+    pop(i).Cost = CostFunction(pop(i).Position);
     pop(i).Distance = zeros(1, nPop);
     pop(i).IsDominated = false;
 end
@@ -48,14 +48,14 @@ FES = 0; % Function Evaluations
 
 %% Main Loop
 while FES < MaxFES
-    % Crossover
+    % Binary TournamentSelection
     pool = TournamentSelection(pop, 2);
 
     % Recombination and Mutation
     popn = Variation(pool, crossover_params, mutate_params);
 
     for i = 1:numel(popn)
-        popn(i).Value = TestFunction(popn(i).Position);
+        popn(i).Cost = CostFunction(popn(i).Position);
         FES = FES + 1;
     end
 
@@ -69,47 +69,47 @@ while FES < MaxFES
     pop = GetDominants(pop);
 
     % display
-    PlotVals(pop);
+    PlotCosts(pop);
     pause(0.01);
 end
 
 %% Reults
 disp(' ');
-Vals = [pop.Value];
+Costs = [pop.Cost];
 for j = 1:nObj
 
     disp(['Objective #', num2str(j), ':']);
-    disp(['      Min = ', num2str(min(Vals(j, :)))]);
-    disp(['      Max = ', num2str(max(Vals(j, :)))]);
-    disp(['    Range = ', num2str(max(Vals(j, :))-min(Vals(j, :)))]);
-    disp(['    St.D. = ', num2str(std(Vals(j, :)))]);
-    disp(['     Mean = ', num2str(mean(Vals(j, :)))]);
+    disp(['      Min = ', num2str(min(Costs(j, :)))]);
+    disp(['      Max = ', num2str(max(Costs(j, :)))]);
+    disp(['    Range = ', num2str(max(Costs(j, :))-min(Costs(j, :)))]);
+    disp(['    St.D. = ', num2str(std(Costs(j, :)))]);
+    disp(['     Mean = ', num2str(mean(Costs(j, :)))]);
     disp(' ');
 
 end
 %% Function Defination
 function [pop, c] = CalculateFitness(pop, K)
 nPop = numel(pop);
-Values = [pop.Value];
-nObj = size(Values, 1);
+Costs = [pop.Cost];
+nObj = size(Costs, 1);
 
 % Normalization
 lb = zeros(1, nObj);
 ub = zeros(1, nObj);
 for i = 1:nObj
-    lb(i) = min(Values(i, :));
-    ub(i) = max(Values(i, :));
+    lb(i) = min(Costs(i, :));
+    ub(i) = max(Costs(i, :));
 end
-normalized_Values = Values;
+normalized_Costs = Costs;
 for i = 1:nObj
-    normalized_Values(i, :) = (normalized_Values(i, :) - lb(i)) / (ub(i) - lb(i));
+    normalized_Costs(i, :) = (normalized_Costs(i, :) - lb(i)) / (ub(i) - lb(i));
 end
 
-% Calculate Indicator Values
+% Calculate Indicator Costs
 for i = 1:nPop
     for j = 1:nPop
         if i ~= j
-            pop(i).Distance(j) = max(normalized_Values(:, i)-normalized_Values(:, j));
+            pop(i).Distance(j) = max(normalized_Costs(:, i)-normalized_Costs(:, j));
         else
             pop(i).Distance(j) = 0;
         end

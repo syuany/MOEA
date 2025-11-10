@@ -3,14 +3,14 @@ clear;
 close all;
 
 % Settings
-TestFunction = @(x) ZDT6(x);
+CostFunction = @(x) ZDT6(x);
 nVar = 10;
 VarSize = [1, nVar];
 VarMin = zeros(VarSize);
 VarMax = ones(VarSize);
-nObj = numel(TestFunction(unifrnd(VarMin, VarMax, VarSize)));
+nObj = numel(CostFunction(unifrnd(VarMin, VarMax, VarSize)));
 
-MaxIt = 300;
+MaxIt = 200;
 nDom = 100;
 nActive = 20;
 nClone = 100;
@@ -19,25 +19,25 @@ crossover_params.pc = 1;
 crossover_params.eta = 15;
 crossover_params.lb = VarMin;
 crossover_params.ub = VarMax;
-crossover_params.TestFunction = TestFunction;
+crossover_params.CostFunction = CostFunction;
 
 mutate_params.pm = 1 / nVar;
 mutate_params.sm = nVar;
 mutate_params.eta = 20;
 mutate_params.lb = VarMin;
 mutate_params.ub = VarMax;
-mutate_params.TestFunction = TestFunction;
+mutate_params.CostFunction = CostFunction;
 
 % Initalization
 empty_individual.Position = [];
-empty_individual.Value = [];
+empty_individual.Cost = [];
 empty_individual.IsDominated = [];
 empty_individual.CrowdingDistance = [];
 
 B = repmat(empty_individual, nDom, 1);
 for i = 1:nDom
     B(i).Position = unifrnd(VarMin, VarMax, VarSize);
-    B(i).Value = TestFunction(B(i).Position);
+    B(i).Cost = CostFunction(B(i).Position);
     B(i).IsDominated = false;
 end
 
@@ -77,7 +77,7 @@ for it = 1:MaxIt
     end
 
     % display
-    PlotVals(D);
+    PlotCosts(D);
     pause(0.01);
     disp(['Iteration ', num2str(it), ': Number of D = ', num2str(numel(D))]);
 end
@@ -85,10 +85,10 @@ end
 % Reults
 disp(' ');
 
-DV = [D.Value];
+DV = [D.Cost];
 for j = 1:nObj
 
-    disp(['Value #', num2str(j), ':']);
+    disp(['Cost #', num2str(j), ':']);
     disp(['      Min = ', num2str(min(DV(j, :)))]);
     disp(['      Max = ', num2str(max(DV(j, :)))]);
     disp(['    Range = ', num2str(max(DV(j, :))-min(DV(j, :)))]);
@@ -101,7 +101,7 @@ end
 
 function pop = CalcCrowdingDistance(pop)
 nPop = numel(pop);
-Objs = [pop.Value];
+Objs = [pop.Cost];
 nObj = size(Objs, 1);
 d = zeros(nPop, nObj);
 for j = 1:nObj
@@ -149,7 +149,7 @@ eta = crossover_params.eta;
 pc = crossover_params.pc;
 lb = crossover_params.lb;
 ub = crossover_params.ub;
-TestFunction = crossover_params.TestFunction;
+CostFunction = crossover_params.CostFunction;
 R = C;
 
 for i = 1:nClone
@@ -176,7 +176,7 @@ for i = 1:nClone
         else
             R(i).Position = off2;
         end
-        R(i).Value = TestFunction(R(i).Position);
+        R(i).Cost = CostFunction(R(i).Position);
     end
 end
 end
@@ -190,11 +190,11 @@ sm = mutate_params.sm;
 eta = mutate_params.eta;
 lb = mutate_params.lb;
 ub = mutate_params.ub;
-TestFunction = mutate_params.TestFunction;
+CostFunction = mutate_params.CostFunction;
 
 for i = 1:nPop
     mu = pop(i).Position;
-    ori = pop(i).Value;
+    ori = pop(i).Cost;
     rnd = randperm(sm);
     mutated = false;
 
@@ -211,11 +211,11 @@ for i = 1:nPop
 
             mu(j) = mu(j) + delta * (ub(j) - lb(j));
             mu(j) = max(min(mu(j), ub(j)), lb(j));
-            mut = TestFunction(mu);
+            mut = CostFunction(mu);
 
             if Dominates(mut, ori)
                 pop(i).Position = mu;
-                pop(i).Value = TestFunction(mu);
+                pop(i).Cost = CostFunction(mu);
                 mutated = true;
                 break;
             end
@@ -227,6 +227,6 @@ for i = 1:nPop
     end
 
     pop(i).Position = mu;
-    pop(i).Value = TestFunction(mu);
+    pop(i).Cost = CostFunction(mu);
 end
 end

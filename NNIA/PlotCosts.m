@@ -1,7 +1,7 @@
-function PlotVals(D)
+function PlotCosts(D)
     figure(1);
-    Values = [D.Value];
-    plot(Values(1, :), Values(2, :), 'x');
+    Costs = [D.Cost];
+    plot(Costs(1, :), Costs(2, :), 'x');
     xlabel('1^{st} Objective');
     ylabel('2^{st} Objective');
     grid on;
