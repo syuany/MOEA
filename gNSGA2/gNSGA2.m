@@ -127,19 +127,6 @@ for i = 1:nPop
 end
 end
 
-function b = Dominates(x, y)
-
-if isstruct(x)
-    x = x.Cost;
-end
-if isstruct(y)
-    y = y.Cost;
-end
-
-b = all(x <= y) && any(x < y);
-
-end
-
 function [pop, F] = SortPopulation(pop)
 
 % Sort Based on Crowding Distance
