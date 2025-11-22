@@ -7,8 +7,6 @@ format long g
 
 warning ('off')
 
-nObj = numel(CostFunction(unifrnd(VarMin, VarMax, VarSize)));
-
 for type=1:7
     tic()
     if type==1
@@ -27,7 +25,7 @@ for type=1:7
         nVar=5000;
     end
     
-    [solution, value]=CCGDE3(nVar);
-    fprintf('finished with the number of decision variables: %d', nVar);
+    nfe=CCGDE3(nVar);
+    fprintf('finished with the number of decision variables: %d, nfe: %d\n', nVar, nfe);
     toc()
 end

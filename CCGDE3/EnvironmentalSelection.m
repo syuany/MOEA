@@ -1,24 +1,17 @@
-function pop=EnvironmentalSelection(pop, N)
-    [pop, F] = NDSort(pop);
-    pop = CalcCrowdingDistance(pop, F);
-    % pop = SortPopulation(pop);
+function Population=EnvironmentalSelection(Population, N)
+    [Population, F] = NDSort(Population);
+    Population = CalcCrowdingDistance(Population, F);
+    % Population = SortPopulation(Population);
 
     % Sort Based on Crowding Distance
-    [~, CDSO] = sort([pop.CrowdingDistance], 'descend');
-    pop = pop(CDSO);
+    [~, CDSO] = sort([Population.CrowdingDistance], 'descend');
+    Population = Population(CDSO);
 
     % Sort Based on Rank
-    [~, RSO] = sort([pop.Rank]);
-    pop = pop(RSO);
+    [~, RSO] = sort([Population.Rank]);
+    Population = Population(RSO);
 
-    % % Update Fronts
-    % Ranks = [pop.Rank];
-    % MaxRank = max(Ranks);
-    % F = cell(MaxRank, 1);
-    % for r = 1:MaxRank
-    %     F{r} = find(Ranks == r);
-    % end
-    if numel(pop)>N
-        pop = pop(1:N);
+    if numel(Population)>N
+        Population = Population(1:N);
     end
 end
